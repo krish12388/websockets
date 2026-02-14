@@ -25,7 +25,11 @@ const userSchema = new mongoose.Schema({
   updatedAt: {
     type: Date,
     default: Date.now
-  }
-});
+  },
+  watchlist: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Movie'
+  }]
+},{timestamps: true});
 
 module.exports = mongoose.model('User', userSchema);

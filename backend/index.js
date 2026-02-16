@@ -1,6 +1,7 @@
 const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
+const multer = require('multer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -11,7 +12,11 @@ app.get('/', (req, res) => {
   res.send('Server is running');
 });
 
+const upload = multer({ dest: 'uploads/' });
 
+app.post('/upload', upload.single('file'), (req, res) => {
+  res.json({ message: 'File uploaded', filename: req.file.filename });
+});
 
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });

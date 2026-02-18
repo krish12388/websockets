@@ -1,43 +1,39 @@
 const express = require('express');
-const http = require('http');
 const WebSocket = require('ws');
-const multer = require('multer');
+const http = require('http');
 
-const app = express();
-const PORT = process.env.PORT || 3000;
-
-app.use(express.json());
-
-app.get('/', (req, res) => {
-  res.send('Server is running');
-});
-
-const upload = multer({ dest: 'uploads/' });
-
-app.post('/upload', upload.single('file'), (req, res) => {
-  res.json({ message: 'File uploaded', filename: req.file.filename });
-});
-
-const server = http.createServer(app);
+const server = http.createServer();
 const wss = new WebSocket.Server({ server });
 
 const clients = new Set();
 
 wss.on('connection', (ws) => {
+  console.log('New client connected');
   clients.add(ws);
-  console.log('Client connected');
 
   ws.on('message', (message) => {
-    clients.forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(message);
-      }
-    });
+    try {
+      const data = JSON.parse(message);
+      const chatMessage = {
+        sender: data.username,
+        text: data.message,
+        timestamp: new Date().toISOString()
+      };
+
+      // Broadcast to all connected clients
+      clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify(chatMessage));
+        }
+      });
+    } catch (error) {
+      console.error('Error parsing message:', error);
+    }
   });
 
   ws.on('close', () => {
-    clients.delete(ws);
     console.log('Client disconnected');
+    clients.delete(ws);
   });
 
   ws.on('error', (error) => {
@@ -45,6 +41,6 @@ wss.on('connection', (ws) => {
   });
 });
 
-server.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
+server.listen(8080, () => {
+  console.log('Chat server running on ws://localhost:8080');
 });
